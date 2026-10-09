@@ -1,0 +1,407 @@
+html {
+    --background-color: #ffffff;
+    --shaded-background-color: #f7f7f7;
+    --text-color: #333333;
+    --muted-text-color: #999999;
+    --accent-color: #0e80cd;
+    --secondary-accent-color: #c22c5d;
+    --success-color: #2c804d;
+    --default-font: Inconsolata;
+    font-family: var(--default-font), sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+    html {
+        --background-color: #171717;
+        --shaded-background-color: #111111;
+        --text-color: #dddddd;
+        --muted-text-color: #777777;
+        --accent-color: #66a6e6;
+        --secondary-accent-color: #ca6a8a;
+        --success-color: #54a674;
+    }
+}
+
+
+div.section-container {
+    width: 100%;
+    overflow: auto;
+}
+
+body > div.section-container:nth-of-type(even) {
+    background-color: var(--shaded-background-color);
+}
+
+body > div.section-container:nth-child(odd) {
+    box-shadow: 0 5px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+
+@media (prefers-color-scheme: dark) {
+    body > div.section-container:nth-child(odd) {
+        box-shadow: 0 5px 5px rgba(0, 0, 0, 0.3);
+    }
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    overflow-x: hidden;
+}
+footer {
+    font-size: small;
+    padding-top: 14pt;
+    padding-bottom: 14pt;
+    min-height: 40pt;
+    color: var(--muted-text-color);
+    background-color: var(--shaded-background-color);
+}
+
+a {
+    color: var(--accent-color);
+}
+
+a:visited {
+    color: hsl(from var(--accent-color) h calc(s * 0.3) l);
+}
+
+p {
+    text-align: justify;
+}
+
+ul {
+    list-style-type: square;
+    padding-left: 1.2em;
+}
+
+fieldset {
+    border: 1pt solid var(--accent-color);
+    background: var(--shaded-background-color);
+}
+
+fieldset legend {
+    padding-left: 4pt;
+    padding-right: 4pt;
+    font-size: large;
+}
+
+fieldset label {
+    min-height: 1.2rem;
+    padding: 2pt;
+}
+
+details {
+    margin-top: 4pt;
+    margin-bottom: 4pt;
+}
+
+details summary {
+    cursor: pointer;
+}
+
+details.hints summary {
+    font-size: large;
+    font-weight: bold;
+}
+
+details.hints p, details.hints li {
+    color: var(--muted-text-color);
+    margin-left: 1em;
+}
+
+input {
+    border-radius: 0;
+    color: var(--text-color);
+    font: var(--default-font), sans-serif;
+}
+
+input[type="checkbox"] {
+    display: inline-block;
+    appearance: none;
+    background-color: var(--background-color);
+    border: 1pt solid var(--muted-text-color);
+    width: 1em;
+    height: 1em;
+    min-width: 1em;
+    min-height: 1em;
+    position: relative;
+    box-sizing: content-box;
+}
+
+input[type="checkbox"]:checked::before {
+    display: inline-block;
+    position: absolute;
+    content: "";
+    left: 0.2em;
+    top: 0.2em;
+    width: 0.6em;
+    height: 0.6em;
+    background-color: var(--accent-color);
+}
+
+
+input[type="button"] {
+    background: var(--accent-color);
+    border: 0;
+    color: black;
+    padding: 4pt;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+input[type="button"]:hover {
+    filter: brightness(0.9);
+}
+
+input[type="button"].destructive {
+    background: var(--secondary-accent-color);
+}
+
+input[type="text"], input[type="number"] {
+    background: var(--background-color);
+    border: 1pt solid var(--muted-text-color);
+    border-radius: 0;
+    box-sizing: content-box;
+    padding: 4pt;
+}
+
+select {
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: content-box;
+    border-radius: 0;
+    border: 1pt solid var(--muted-text-color);
+    padding: 4pt;
+    background-color: var(--shaded-background-color);
+    color: var(--text-color);
+    font: var(--default-font), sans-serif;
+    margin-top: 4pt;
+    margin-bottom: 4pt;
+}
+
+.bounded-container {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 6pt;
+    padding-right: 6pt;
+}
+div#horizontal-menu {
+    flex: 1 0 100pt;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    padding: 8pt;
+    background-color: var(--background-color);
+}
+
+div#horizontal-menu fieldset {
+    flex: 1 1;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-basis: 0;
+    justify-content: stretch;
+}
+
+div#horizontal-menu fieldset form {
+    display: flex;
+    flex-direction: row;
+}
+
+div#horizontal-menu fieldset label,select,form,input {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+div#horizontal-menu select:empty {
+    display: none;
+}
+div#horizontal-menu select:has(option:only-child) {
+    /* Hides all selectors that have only one option. */
+    display: none;
+}
+
+fieldset#timeline {
+    display: flex;
+    flex-direction: row;
+}
+
+fieldset#timeline span#current-selection {
+    flex-basis: 90pt;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+fieldset#timeline input[type='button'] {
+    margin-left: 8pt;
+}
+
+div#horizontal-menu input[type='range'] {
+    width: 100%;
+}
+
+div.section-container#view-area {
+    /* transition: height 0.5s; */
+    max-height: calc(min(1000px, 80vh));
+    min-height: 33vh;
+    height: 1000px;
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+}
+
+div.section-container#view-area.small {
+    height: 25vh;
+}
+
+div.section-container#view-area div#graph {
+    height: 100%;
+}
+
+div#floating-menu {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    position: absolute;
+    right: 10pt;
+    top: 10pt;
+    padding: 0;
+    width: auto;
+    background: none;
+    border: none;
+}
+div#floating-menu > * {
+    min-width: 80pt;
+    box-sizing: border-box;
+}
+
+div#floating-menu > :not(:first-child) {
+    margin-top: 8pt;
+}
+
+div#floating-menu input#toggle-view-size {
+    content: "Larger";
+}
+
+div#floating-menu input#toggle-view-size::after {
+    content: "Smaller";
+}
+
+
+aside#detail-popup {
+    display: block;
+    position: absolute;
+    background-color: var(--background-color);
+    z-index: 2;
+    border: 1pt solid var(--accent-color);
+    color: var(--text-color);
+    padding: 0;
+    width: auto;
+    max-width: 500px;
+    min-width: 380px;
+}
+
+aside#detail-popup a[href^=http] {
+    color: var(--secondary-accent-color);
+}
+
+div#detail-popup-top-bar {
+    background-color: var(--shaded-background-color);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+div#detail-popup-title {
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-left: 4pt;
+    padding-right: 4pt;
+    flex-basis: 90%;
+    flex-shrink: 1;
+    flex-grow: 0;
+    cursor: move;
+}
+
+input#close-detail-popup {
+    flex-grow: 1;
+    box-sizing: border-box;
+    margin: 0;
+    width: auto;
+}
+
+div#detail-popup-content {
+    padding: 12pt;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 200pt;
+}
+
+.hover-for-explanation {
+    display: inline-block;
+    color: var(--text-color);
+    font-size: x-small;
+    padding-left: 1pt;
+    padding-right: 1pt;
+    border: 1pt solid var(--accent-color);
+    vertical-align: super;
+}
+
+aside#loading-popup {
+    position: absolute;
+    box-sizing: border-box;
+    height: 48pt;
+    width: 300pt;
+    top: calc(50% - 24pt);
+    left: calc(50% - 150pt);
+    background-color: var(--background-color);
+    z-index: 2;
+    border: 1pt solid var(--secondary-accent-color);
+    color: var(--text-color);
+    padding: 12pt;
+
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+
+}
+
+aside span.loading-bar {
+    background-color: var(--secondary-accent-color);
+    display: block;
+    flex-shrink: 0;
+    height: 1em;
+    text-wrap: nowrap;
+}
+
+.stat-container {
+    display: flex;
+    flex-direction: row;
+    padding: 8pt;
+}
+
+div.stat-block {
+    background: var(--shaded-background-color);
+    border: 1pt solid var(--accent-color);
+    padding: 4pt 8pt;
+    min-height: 2em;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+div.stat-block .stat-value {
+    font-size: larger;
+    font-weight: bold;
+}
+
+div.stat-block .stat-label {
+    font-weight: lighter;
+}

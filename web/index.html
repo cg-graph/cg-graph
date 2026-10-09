@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+    <title>CGCG - The Computational Geometry Community Graph</title>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <meta name="description"
+          content="An interactive map of the computational geometry community.">
+    <link rel="stylesheet" href="css/style.css"/>
+    <link rel="stylesheet" href="css/intervalselector.css"/>
+
+    <!-- Move away from google fonts at some point. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap"
+          rel="stylesheet">
+
+    <script src="js/lib/force-graph.js"></script>
+    <script src="js/lib/d3.v7.min.js"></script>
+    <script src="js/lib/sql-wasm.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "graphology": "https://cdn.skypack.dev/graphology",
+                "graphology-components" : "https://cdn.skypack.dev/graphology-components",
+                "graphology-metrics/centrality/": "https://cdn.skypack.dev/graphology-metrics/centrality/",
+                "graphology-metrics/centrality/closeness" : "https://cdn.skypack.dev/graphology-metrics/centrality/closeness",
+                "graphology-traversal" : "https://cdn.skypack.dev/graphology-traversal",
+                "graphology-operators" : "https://cdn.skypack.dev/graphology-operators",
+                "graphology-metrics" : "https://cdn.skypack.dev/graphology-metrics",
+                "graphology-metrics/graph" : "https://cdn.skypack.dev/graphology-metrics/graph/",
+                "graphology-metrics/node" : "https://cdn.skypack.dev/graphology-metrics/node/eccentricity",
+                "graphology-utils" : "https://cdn.skypack.dev/graphology-utils/#inferType"
+            }
+        }
+    </script>
+    <script type="module" src="js/intervalselector.js"
+            defer></script>
+    <script type="module" src="js/view.js" defer></script>
+    <script type="module" src="js/graph-interface.js"
+            defer></script>
+</head>
+<body>
+<div class="section-container" id="introduction">
+    <div class="bounded-container">
+        <h1>The Computational Geometry Community</h1>
+        <p> Explore collaboration in the Computational Geometry community
+            through a dynamic co-authorship network built from open conference
+            data provided by DBLP. The data is aggregated and organized into
+            time-based snapshots, allowing you to discover how collaborative
+            structures form, persist, and dissolve over time. Identify cliques
+            and larger clusters, examine central and bridging researchers, and
+            analyze graph-theoretic measures such as diameter, connectivity, and
+            clustering to investigate whether the community exhibits small-world
+            characteristics such as short collaboration paths combined with
+            strong local structure.
+            Inspired by concepts like the Erdös number, this app provides an
+            interactive and evolving perspective on collaboration in
+            computational geometry.
+        </p>
+        <details class="hints">
+            <summary>How to use</summary>
+            <p>
+                At launch, the application automatically retrieves all relevant
+                data from dblp and computes several summary statistics. It also
+                generates a visualization of the CG community graph for a
+                randomly selected year.
+
+                The web interface offers several tools for exploring the data in
+                depth. Users can choose between displaying only co-author
+                relationships or additionally showing the associated
+                publications, and explore the data set interactively by clicking
+                directly on any node or edge within the graph. This reveals
+                detailed information associated with it, and provides even more
+                options to dig into the data.
+
+                A time-range slider allows the user to define a custom interval
+                over which the data is aggregated and visualized. By pressing
+                the "Play" button, the selected interval automatically advances
+                year by year across the full timeline, dynamically updating the
+                visualization to reflect the active data for the respective
+                year(s).
+            </p>
+
+            <p>Two coloring modes enhance interpretability:</p>
+            <ul>
+                <li> A recency-based mode that gradually fades colors to
+                    highlight temporal dynamics.
+                </li>
+                <li> A component-based mode that assigns distinct colors to
+                    different connected components within the graph.
+                </li>
+            </ul>
+            <p>
+                Together, these features provide an intuitive and flexible way
+                to explore the evolution of collaboration patterns in the CG
+                community over time.
+            </p>
+            <p>
+                <i>If you have trouble with or would simply like to reload the
+                    dataset, press this button:</i>
+                <input type="button" class="destructive" id="invalidate-cache"
+                       value="Refresh"/>
+            </p>
+        </details>
+    </div>
+    <div id="horizontal-menu" class="bounded-container">
+        <fieldset id="view">
+            <legend>View</legend>
+            <label for="venue-filter">Show</label>
+            <select id="venue-filter"><!-- Auto-initialized. --></select>
+            <label for="view-relation"></label>
+            <select id="view-relation">
+                <option value="author2author" selected>Co-Authorship</option>
+                <option value="author2paper">Authorship</option>
+            </select>
+            <form action="javascript:">
+                <input type="text" name="search" id="query-input"
+                       placeholder="Search...">
+                <label for="query-input" id="search-result-count"></label>
+            </form>
+        </fieldset>
+        <fieldset id="colors">
+            <legend>Colors</legend>
+            <input
+                    type="checkbox"
+                    id="decay-toggle" name="decay-toggle"
+                    checked><label for="decay-toggle">Inactivity Fade</label>
+            <input
+                    type="checkbox"
+                    id="component-toggle" name="component-toggle"><label
+                for="component-toggle">Component</label>
+            <input
+                type="checkbox"
+                id = "clique-toggle" name="clique-toggle"><label for="clique-toggle">Clique Cover</label>
+        </fieldset>
+        <fieldset id="timeline"
+                  style="flex-basis: 90%; flex-shrink: 0; flex-wrap: nowrap;">
+            <legend>Years</legend>
+            <span id="current-selection"></span>
+            <div class="intervalselector" id="year-selector">
+                <input type="range" min="1985" max="2025" value="1985"
+                       step="1">
+            </div>
+            <input type="button" value="Play" id="animation-play-pause"/>
+        </fieldset>
+    </div>
+</div>
+<div class="section-container small" id="view-area">
+    <div id="graph"></div>
+    <div id="floating-menu">
+        <input type="button" id="toggle-view-size" value="Resize"/>
+        <input type="button" id="recenter-view" value="Recenter"/>
+        <div class="stat-block">
+            <span class="stat-value" id="live-stat-authors">-</span><span
+                class="stat-label">authors</span>
+        </div>
+        <div class="stat-block">
+            <span class="stat-value" id="live-stat-publications">-</span><span
+                class="stat-label">papers</span>
+        </div>
+        <div class="stat-block">
+            <span class="stat-value" id="live-stat-components">-</span><span
+                class="stat-label">components</span>
+        </div>
+    </div>
+    <aside id="loading-popup">
+        <span class="loading-label">Initializing Database...</span>
+        <span class="loading-bar" style="width: 0;"></span>
+    </aside>
+</div>
+<div class="section-container" id="summary">
+    <aside class="bounded-container stat-container">
+        <div class="stat-block">
+            <span class="stat-value stat-animated stat-authors">-</span><span
+                class="stat-label">authors</span>
+        </div>
+        <div class="stat-block">
+            <span class="stat-value stat-animated stat-publications">-</span><span
+                class="stat-label">papers</span>
+        </div>
+        <div class="stat-block">
+            <span class="stat-value stat-animated stat-years">-</span><span
+                class="stat-label">years</span>
+        </div>
+    </aside>
+    <div class="bounded-container">
+        <p>
+            To summarize the full story, the aggregated collaboration graph for
+            <span class="stat-first_year">??</span>&dash;<span
+                class="stat-last_year">??</span> contains <span
+                class="stat-authors">??</span> researchers who collectively
+            authored
+            <span class="stat-publications">??</span> papers, forming 204
+            connected components, including 82
+            singletons.
+            The largest clique contains 14 researchers, whereas the average
+            clique size is only 3.39, indicating that tightly interconnected
+            groups remain relatively small.
+            A similar pattern emerges when examining the connected components.
+            Although the largest component is substantial, comprising 1,960
+            researchers and 2105 papers, and having a diameter
+            of 12 and a radius of 6, the graph is otherwise highly fragmented.
+            The mean component size is merely 11.7 nodes, increasing to 19.05
+            when singleton components are excluded.
+            This suggests that, beyond the dominant core, collaboration is
+            dispersed across many small components.
+            Consistently, the average number of authors per paper is relatively
+            modest, at 2.76 overall and rising to 3.13 when single-author papers
+            are excluded, reflecting the prevalence of small collaborative
+            teams.
+        </p>
+    </div>
+</div>
+<aside id="detail-popup" style="display:none">
+    <div id="detail-popup-top-bar">
+        <div id="detail-popup-title" draggable="true">Title</div>
+        <input type="button" class="destructive" id="close-detail-popup"
+               value="close"/>
+    </div>
+    <div id="detail-popup-content">
+        Content
+    </div>
+</aside>
+<div class="section-container" id="more-text">
+    <div class="bounded-container" style="margin-bottom: 2em;">
+        <h2>About the project</h2>
+        <p>
+            This project was sparked by an empirical observation: a member of
+            our group repeatedly encountered co-authors of another member across
+            different conferences.
+            This recurring experience suggested that co-authorship distances
+            within the community may be small, and raised questions about the
+            effective diameter of the collaboration graph, the location of its
+            center, and the overall connectivity.
+
+            Our visualization is not designed to rank or compare individuals for
+            competitive purposes, but rather to support open and collaborative
+            exploration and understanding of our community.
+            Moreover, our intention is that it is &quot;owned&quot; and further
+            developed by the community.
+            Therefore, we invite everyone to explore the data, share insights,
+            and contribute ideas or new features to shape its future.
+        </p>
+
+        <h3>About the data</h3>
+        <p>The <a href="https://dblp.org">dblp computer science bibliography</a>
+            offers <a href="https://dblp.org/db/about/copyright.html">open
+                bibliographic data (CC0 1.0)</a> for major computer science
+            journals and conference proceedings.
+            Upon launch, your browser retrieves this information directly from
+            dblp.
+
+            All further interaction and processing takes place locally on your
+            computer, using
+            <a href="https://sql.js.org/">sql.js (MIT)</a>,
+            <a href="https://graphology.github.io/">graphology (MIT)</a>,
+            and
+            <a href="https://github.com/vasturiano/force-graph">force-graph
+                (MIT)</a>.
+        </p>
+        <p>
+            One last comment: With growing worldwide demand and a shrinking
+            budget, dblp relies on community support. We kindly invite you to
+            consider <a href="https://www.dagstuhl.de/en/dblp/donate">donating
+            to Schloss Dagstuhl LZI</a>.
+        </p>
+    </div>
+</div>
+<footer>
+    <div class="bounded-container">
+        Created and maintained by
+        <a href="https://orcid.org/0000-0002-2364-0583">O. Aichholzer</a>,
+        <a href="https://orcid.org/0000-0002-6827-2200">H. A. Akitaya</a>,
+        <a href="https://orcid.org/0000-0002-2161-6571">A. Brötzner</a>,
+        <a href="https://orcid.org/0000-0001-9635-5890">P. Kramer</a>,
+        <a href="https://orcid.org/0000-0003-0846-5163">C. Rieck</a>,
+        and
+        <a href="https://orcid.org/0009-0008-9005-6855">F. Stock</a>.
+        <p>Version 534d144</p>
+        <p>
+            The dataset is loaded directly from <a
+                href="https://dblp.org/">DBLP</a> to your computer.
+            All further computation takes place locally.
+            We do not upload, store, collect, or analyze any
+            of your actions, search patterns, or related information.
+            No IP
+            addresses are tracked, and no cookies are used.
+
+            If you notice any inconsistencies or would prefer to
+            be filtered from the visualization, please contact any of the
+            maintainers.
+        </p>
+    </div>
+</footer>
+</body>
+</html>
